@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시간의 교차점 : 현재의 방</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background: #e9e5da;
+    color: #3a362e;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+  }
+
+  header { text-align: center; margin: 0 0 24px 0; }
+
+  .main-title {
+    font-size: 1.5rem;
+    color: #3a362e;
+    letter-spacing: 1px;
+  }
+
+  .sub-title {
+    font-size: 0.8rem;
+    color: #8f897a;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  nav { display: none; gap: 12px; margin: 22px 0; }
+
+  .nav-btn {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background: #f2efe6;
+    color: #a39c8b;
+    border: 1px solid #d9d3c4;
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: all 0.25s ease;
+  }
+
+  .nav-btn.unlocked { color: #6b6252; border-color: #a89a7d; }
+
+  .nav-btn.active {
+    background: #a89a7d;
+    color: #fff;
+    border-color: #a89a7d;
+    box-shadow: 0 3px 10px rgba(168,154,125,0.4);
+  }
+
+  .nav-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+  /* ===== 경과 시간 타이머 ===== */
+  .timer {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    padding: 8px 16px;
+    background: #3a362e;
+    border-radius: 20px;
+    color: #f2efe6;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+  }
+
+  /* ===== 구겨진 종이 카드 ===== */
+  .stage-wrap {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    display: none;
+  }
+
+  .stage-wrap.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    padding: 40px 44px;
+    text-align: center;
+    border-radius: 6px;
+    background-color: #d8d3c4;
+    background-image:
+      radial-gradient(ellipse 380px 220px at 12% 8%, rgba(255,255,255,0.55), transparent 60%),
+      radial-gradient(ellipse 300px 260px at 85% 5%, rgba(120,113,96,0.28), transparent 55%),
+      radial-gradient(ellipse 320px 240px at 65% 38%, rgba(255,255,255,0.4), transparent 55%),
+      radial-gradient(ellipse 260px 220px at 25% 62%, rgba(120,113,96,0.22), transparent 55%),
+      radial-gradient(ellipse 340px 260px at 90% 88%, rgba(255,255,255,0.4), transparent 55%),
+      radial-gradient(ellipse 300px 220px at 8% 92%, rgba(120,113,96,0.22), transparent 55%),
+      repeating-linear-gradient(118deg, transparent 0px, transparent 55px, rgba(90,84,70,0.06) 56px, transparent 58px),
+      repeating-linear-gradient(35deg, transparent 0px, transparent 70px, rgba(255,255,255,0.12) 71px, transparent 73px),
+      linear-gradient(160deg, #ddd8c9 0%, #cec8b7 50%, #c3bda9 100%);
+    box-shadow:
+      inset 0 0 40px rgba(90,84,70,0.12),
+      0 14px 32px rgba(0,0,0,0.16),
+      0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .stage-title {
+    font-size: 1.35rem;
+    color: #3a362e;
+    border-bottom: 2px solid rgba(90,84,70,0.25);
+    padding-bottom: 10px;
+    margin-bottom: 26px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 모든 단계 내부 요소를 균일한 간격으로 정렬 */
+  .stage-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .story {
+    width: 100%;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #4a453a;
+    background: rgba(255,255,255,0.35);
+    padding: 15px;
+    border-radius: 6px;
+    text-align: left;
+    border: 1px solid rgba(90,84,70,0.15);
+  }
+
+  .story b { color: #7a6e50; display: inline-block; margin-top: 6px; }
+
+  .keypad-display {
+    width: 100%;
+    max-width: 270px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(90,84,70,0.25);
+    color: #3a362e;
+    font-size: 1.7rem;
+    letter-spacing: 8px;
+    padding: 14px;
+    border-radius: 8px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 270px;
+    width: 100%;
+  }
+
+  .key-btn {
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(90,84,70,0.2);
+    color: #3a362e;
+    font-size: 1.05rem;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    transition: all 0.15s ease;
+  }
+
+  .key-btn:hover { background: #a89a7d; color: #fff; border-color: #a89a7d; }
+  .key-btn:active { transform: scale(0.95); }
+
+  .action-btn {
+    background: #a89a7d;
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 20px;
+    box-shadow: 0 3px 10px rgba(168,154,125,0.4);
+    transition: all 0.2s ease;
+  }
+
+  .action-btn:hover { background: #8f8266; }
+
+  /* 결과창: 문제풀이 버튼을 누르면 새로 나타나는 전용 박스 */
+  .result-box {
+    display: none;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+
+  .result-box.show {
+    display: block;
+    animation: fadeIn 0.35s ease-in-out;
+  }
+
+  .result-box.success {
+    color: #2e7d32;
+    background: rgba(46,125,50,0.12);
+    border-color: rgba(46,125,50,0.35);
+  }
+
+  .result-box.error {
+    color: #c0392b;
+    background: rgba(192,57,43,0.12);
+    border-color: rgba(192,57,43,0.35);
+  }
+
+  /* 3단계 최종 선언 */
+  .final-question {
+    font-size: 1.4rem;
+    color: #3a362e;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+
+  .final-note { font-size: 0.85rem; color: #7a6e50; }
+</style>
+</head>
+<body>
+
+  <div class="timer" id="timer">00:00</div>
+
+  <header>
+    <div class="main-title">시간의 교차점</div>
+    <div class="sub-title">CURRENT TIMELINE · 오늘의 기록</div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active unlocked" id="nav-1" onclick="goStage(1)">1단계</button>
+    <button class="nav-btn" id="nav-2" onclick="goStage(2)">2단계</button>
+    <button class="nav-btn" id="nav-3" onclick="goStage(3)">3단계</button>
+  </nav>
+
+  <!-- 1단계 : 감정 기록 -->
+  <div class="stage-wrap active" id="wrap-1">
+    <main class="stage">
+      <h1 class="stage-title">오늘의 기록 : 감정 노트</h1>
+      <div class="stage-body">
+        <div class="story">
+          노트북 화면 위로 짧은 기록 하나가 열린다.<br>
+          흐릿한 메모 사이로 마음의 흔적이 남아있다.<br><br>
+          <b style="font-size:1.2rem;">[ QUERY: 내가 가장 슬펐던 날은? ]</b>
+        </div>
+
+        <div class="keypad-display" id="display-1">____</div>
+        <div class="keypad-grid" id="keypad-1"></div>
+        <div class="result-box" id="msg-1"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 2단계 : 균열의 관계 -->
+  <div class="stage-wrap" id="wrap-2">
+    <main class="stage">
+      <h1 class="stage-title">오늘의 기록 : 균열의 관계</h1>
+      <div class="stage-body">
+        <div class="story">
+          <b style="font-size:1.2rem;">분열된 친구들과의 사이 속에서 극복할 수 있는 해결법은?</b>
+        </div>
+
+        <div class="keypad-display" id="display-2">_____</div>
+        <div class="keypad-grid" id="keypad-2"></div>
+        <div class="result-box" id="msg-2"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 3단계 : 최종 선언 -->
+  <div class="stage-wrap" id="wrap-3">
+    <main class="stage">
+      <h1 class="stage-title">오늘의 기록 : 마지막 페이지</h1>
+      <div class="stage-body">
+        <div class="story">
+          모든 기록이 하나로 겹쳐지는 순간, 노트의 마지막 페이지가 열린다.<br>
+          이제 화면이 아닌, 목소리로 답할 차례다.
+        </div>
+
+        <div class="final-question">그래서 우리는?</div>
+        <div class="final-note">🔊 정답을 선생님에게 큰 소리로 외쳐주세요!</div>
+
+        <button class="action-btn" onclick="declareFinal()">최종 페이지 넘기기</button>
+        <div class="result-box" id="msg-3"></div>
+      </div>
+    </main>
+  </div>
+
+<script>
+  // ---------- 경과 시간 타이머 ----------
+  let elapsedSeconds = 0;
+  function updateTimer() {
+    const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+    const s = String(elapsedSeconds % 60).padStart(2, '0');
+    document.getElementById('timer').innerText = `${m}:${s}`;
+    elapsedSeconds++;
+  }
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
+  const unlocked = { 1: true, 2: false, 3: false };
+
+  function refreshNav() {
+    for (let i = 1; i <= 3; i++) {
+      const btn = document.getElementById(`nav-${i}`);
+      btn.classList.toggle('unlocked', unlocked[i]);
+      btn.disabled = !unlocked[i];
+    }
+  }
+
+  function goStage(n) {
+    if (!unlocked[n]) return;
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById(`wrap-${i}`).classList.toggle('active', i === n);
+      document.getElementById(`nav-${i}`).classList.toggle('active', i === n);
+    }
+  }
+
+  // ---------- 키패드 생성 ----------
+  const inputs = { 1: "", 2: "" };
+  const lengths = { 1: 4, 2: 5 };
+  const answers = { 1: "0710", 2: "68747" };
+
+  function buildKeypad(stage) {
+    const grid = document.getElementById(`keypad-${stage}`);
+    const keys = ['1','2','3','4','5','6','7','8','9','CLR','0','ENTER'];
+    keys.forEach(k => {
+      const btn = document.createElement('button');
+      btn.className = 'key-btn';
+      btn.textContent = k;
+      if (k === 'CLR') { btn.style.color = '#c0392b'; btn.onclick = () => clearInput(stage); }
+      else if (k === 'ENTER') { btn.style.color = '#2e7d32'; btn.onclick = () => checkCode(stage); }
+      else { btn.onclick = () => pressKey(stage, k); }
+      grid.appendChild(btn);
+    });
+  }
+  buildKeypad(1);
+  buildKeypad(2);
+
+  function updateDisplay(stage) {
+    document.getElementById(`display-${stage}`).innerText =
+      inputs[stage].padEnd(lengths[stage], '_');
+  }
+
+  function pressKey(stage, num) {
+    if (inputs[stage].length < lengths[stage]) {
+      inputs[stage] += num;
+      updateDisplay(stage);
+    }
+  }
+
+  function clearInput(stage) {
+    inputs[stage] = "";
+    updateDisplay(stage);
+    const msg = document.getElementById(`msg-${stage}`);
+    msg.className = 'result-box';
+    msg.innerText = "";
+  }
+
+  function checkCode(stage) {
+    const msg = document.getElementById(`msg-${stage}`);
+    if (inputs[stage] === answers[stage]) {
+      msg.className = 'result-box show success';
+      msg.innerText = "정답입니다! 다음 페이지가 열렸습니다.";
+      unlocked[stage + 1] = true;
+      refreshNav();
+      setTimeout(() => goStage(stage + 1), 900);
+    } else {
+      msg.className = 'result-box show error';
+      msg.innerText = "아직 아닙니다. 다시 시도하세요.";
+      inputs[stage] = "";
+      updateDisplay(stage);
+    }
+  }
+
+  function declareFinal() {
+    const msg = document.getElementById('msg-3');
+    msg.className = 'result-box show success';
+    msg.innerText = "선생님께 정답을 외쳤다면, 임무 완료입니다.";
+  }
+
+  refreshNav();
+</script>
+</body>
+</html>
