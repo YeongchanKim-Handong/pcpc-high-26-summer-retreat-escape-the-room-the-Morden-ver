@@ -61,6 +61,23 @@
 
   .nav-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
+  /* ===== 경과 시간 타이머 ===== */
+  .timer {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    padding: 8px 16px;
+    background: #3a362e;
+    border-radius: 20px;
+    color: #f2efe6;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+  }
+
   /* ===== 구겨진 종이 카드 ===== */
   .stage-wrap {
     position: relative;
@@ -228,6 +245,8 @@
 </head>
 <body>
 
+  <div class="timer" id="timer">00:00</div>
+
   <header>
     <div class="main-title">시간의 교차점</div>
     <div class="sub-title">CURRENT TIMELINE · 오늘의 기록</div>
@@ -293,6 +312,17 @@
   </div>
 
 <script>
+  // ---------- 경과 시간 타이머 ----------
+  let elapsedSeconds = 0;
+  function updateTimer() {
+    const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+    const s = String(elapsedSeconds % 60).padStart(2, '0');
+    document.getElementById('timer').innerText = `${m}:${s}`;
+    elapsedSeconds++;
+  }
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
   const unlocked = { 1: true, 2: false, 3: false };
 
   function refreshNav() {
