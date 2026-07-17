@@ -78,6 +78,41 @@
     z-index: 100;
   }
 
+  /* ===== 제한 시간 카운트다운 ===== */
+  .countdown {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    padding: 8px 16px;
+    background: #d32f2f;
+    border-radius: 20px;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    box-shadow: 0 0 14px rgba(211,47,47,0.5), 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+  }
+
+  .countdown.warning {
+    animation: pulseWarn 1s infinite;
+  }
+
+  .countdown-label {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 0.75rem;
+    font-weight: normal;
+    letter-spacing: 0;
+    margin-right: 6px;
+    opacity: 0.9;
+  }
+
+  @keyframes pulseWarn {
+    0%, 100% { box-shadow: 0 0 14px rgba(211,47,47,0.5), 0 4px 12px rgba(0,0,0,0.2); }
+    50% { box-shadow: 0 0 28px rgba(211,47,47,0.95), 0 4px 12px rgba(0,0,0,0.2); }
+  }
+
   /* ===== 구겨진 종이 카드 ===== */
   .stage-wrap {
     position: relative;
@@ -246,6 +281,7 @@
 <body>
 
   <div class="timer" id="timer">00:00</div>
+  <div class="countdown" id="countdown"><span class="countdown-label">남은 시간</span> 25:00</div>
 
   <header>
     <div class="main-title">시간의 교차점</div>
@@ -322,6 +358,24 @@
   }
   updateTimer();
   setInterval(updateTimer, 1000);
+
+  // ---------- 남은 시간 카운트다운 (25분 제한) ----------
+  let remainingSeconds = 25 * 60;
+  const countdownEl = document.getElementById('countdown');
+  function updateCountdown() {
+    if (remainingSeconds <= 0) {
+      countdownEl.classList.remove('warning');
+      countdownEl.innerHTML = '<span class="countdown-label">남은 시간</span> TIME UP';
+      return;
+    }
+    const m = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+    const s = String(remainingSeconds % 60).padStart(2, '0');
+    countdownEl.innerHTML = `<span class="countdown-label">남은 시간</span> ${m}:${s}`;
+    countdownEl.classList.toggle('warning', remainingSeconds <= 300);
+    remainingSeconds--;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
 
   const unlocked = { 1: true, 2: false, 3: false };
 
